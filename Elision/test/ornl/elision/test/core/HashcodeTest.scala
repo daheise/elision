@@ -45,7 +45,7 @@ import ornl.elision.core.strToLiteral
  */
 class HashcodeTest extends AssertionsForJUnit {
  val numObjs = 10
- val ccaSize = 5000
+ val ccaSize = 4000
  
  /** Constructs a deeply nested Lamda atom. */
  def funcGen(t: Int)(i: Int): BasicAtom = {
@@ -69,24 +69,34 @@ class HashcodeTest extends AssertionsForJUnit {
     
     // compute hashCodes.
     val rt = Array.fill[Long](numObjs)(0)
+    val rtt = Array.fill[Long](numObjs)(0)
     for (i <- 0 to numObjs-1) {
       val atom = f(i)
-      
       rt(i) = System.currentTimeMillis
       atom.hashCode
       rt(i) = System.currentTimeMillis - rt(i)
+      rtt(i) = System.currentTimeMillis
+      atom.hashCode
+      rtt(i) = System.currentTimeMillis - rtt(i)
     }
     println("Avg time to compute hashCode: " + rt.reduceLeft(_ + _) / rt.length + "(ms)") 
+    println("Avg time to recompute hashCode: " + rtt.reduceLeft(_ + _) / rtt.length + "(ms)")
+    
     
     // compute otherHashCodes
     val gt = Array.fill[Long](numObjs)(0)
+    val gtt = Array.fill[Long](numObjs)(0)
     for (i <- 0 to numObjs-1) {
       val atom = f(i)
       
       gt(i) = System.currentTimeMillis
       val ignore = atom.otherHashCode
       gt(i) = System.currentTimeMillis - gt(i)
+      gtt(i) = System.currentTimeMillis
+      val ignore2 = atom.otherHashCode
+      gtt(i) = System.currentTimeMillis - gtt(i)
     }
-    println("Avg time to compute otherHashCode: " + gt.reduceLeft(_ + _) / gt.length + "(ms)") 
+    println("Avg time to compute otherHashCode: " + gt.reduceLeft(_ + _) / gt.length + "(ms)")
+    println("Avg time to recompute otherHashCode: " + gtt.reduceLeft(_ + _) / gtt.length + "(ms)")
   }
 }
