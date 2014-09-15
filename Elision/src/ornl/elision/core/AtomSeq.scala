@@ -155,11 +155,59 @@ class AtomSeq(val props: AlgProp, orig_xatoms: IndexedSeq[BasicAtom])
     }
     r
   }
-  
+
+  /**
+   * A mapping from variable names to multiplicity information.
+   * Multiplicity is stored as a tuple of
+   * (shared, top-level multiplicity, total multiplicity)
+   */
   lazy val variableMultiplicy: HashMap[String, (Boolean, Int, Int)] = {
-    val thing:String = ""
+    val thing: String = ""
     var varmul = HashMap[String, (Boolean, Int, Int)]()
-    varmul(thing) = (false, 0, 0)
+    var shared = false
+    var localMul = 0
+    var totalMul = 0
+
+    def calculate_new_tuple(as:AtomSeq, vari: String) = {
+      val childtuple = as.variableMultiplicy.getOrElse(vari, null)
+      val newtuple =
+        if (childtuple == null) null
+        else (true, variableMultiplicy(vari)._2, variableMultiplicy(vari)._3 + childtuple._3)
+      if (newtuple != null) varmul(vari) = newtuple else null
+    }
+
+    // Visit children
+    var i = 0
+    while (i < atoms.length) {
+      atoms(i) match {
+        case v: Variable if (varmul.contains(v.name)) =>
+          val oldtuple = varmul(v.name)
+          val newtuple = (oldtuple._1, oldtuple._2 + 1, oldtuple._3)
+          varmul(v.name) = newtuple
+        case v: Variable => varmul(v.name) = (false, 1, 0)
+        case as: AtomSeq =>
+          variableMap.keys.foreach(vari => {
+            val childtuple = as.variableMultiplicy.getOrElse(vari, null)
+            val newtuple =
+              if (childtuple == null) null
+              else (true, variableMultiplicy(vari)._2, variableMultiplicy(vari)._3 + childtuple._3)
+            if (newtuple != null) varmul(vari) = newtuple
+          })
+        case app: Apply => app.arg match {
+          case aas: AtomSeq =>
+            variableMap.keys.foreach(vari => {
+              val childtuple = aas.variableMultiplicy.getOrElse(vari, null)
+              val newtuple =
+                if (childtuple == null) null
+                else (true, variableMultiplicy(vari)._2, variableMultiplicy(vari)._3 + childtuple._3)
+              if (newtuple != null) varmul(vari) = newtuple
+            })
+          case _ =>
+        }
+        case _ =>
+      }
+      i = i + 1
+    }
     varmul
   }
   
