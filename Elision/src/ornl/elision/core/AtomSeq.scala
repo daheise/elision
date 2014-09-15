@@ -171,7 +171,7 @@ class AtomSeq(val props: AlgProp, orig_xatoms: IndexedSeq[BasicAtom])
       val childtuple = as.variableMultiplicy.getOrElse(vari, null)
       val newtuple =
         if (childtuple == null) null
-        else (true, variableMultiplicy(vari)._2, variableMultiplicy(vari)._3 + childtuple._3)
+        else (true, variableMultiplicy(vari)._2, variableMultiplicy(vari)._3 + childtuple._2)
       if (newtuple != null) varmul(vari) = newtuple else null
     }
 
@@ -189,7 +189,7 @@ class AtomSeq(val props: AlgProp, orig_xatoms: IndexedSeq[BasicAtom])
             val childtuple = as.variableMultiplicy.getOrElse(vari, null)
             val newtuple =
               if (childtuple == null) null
-              else (true, variableMultiplicy(vari)._2, variableMultiplicy(vari)._3 + childtuple._3)
+              else (true, variableMultiplicy(vari)._2, variableMultiplicy(vari)._3 + childtuple._2)
             if (newtuple != null) varmul(vari) = newtuple
           })
         case app: Apply => app.arg match {
@@ -198,7 +198,7 @@ class AtomSeq(val props: AlgProp, orig_xatoms: IndexedSeq[BasicAtom])
               val childtuple = aas.variableMultiplicy.getOrElse(vari, null)
               val newtuple =
                 if (childtuple == null) null
-                else (true, variableMultiplicy(vari)._2, variableMultiplicy(vari)._3 + childtuple._3)
+                else (true, variableMultiplicy(vari)._2, variableMultiplicy(vari)._3 + childtuple._2)
               if (newtuple != null) varmul(vari) = newtuple
             })
           case _ =>
