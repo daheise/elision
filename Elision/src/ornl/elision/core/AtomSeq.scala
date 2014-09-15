@@ -141,8 +141,8 @@ class AtomSeq(val props: AlgProp, orig_xatoms: IndexedSeq[BasicAtom])
   /**
    * A map of that returns A list of indexes where a variable occurs
    */
-  lazy val variableMap: scala.collection.mutable.OpenHashMap[String, List[Int]] = {
-    var r = scala.collection.mutable.OpenHashMap[String, List[Int]]()
+  lazy val variableMap: HashMap[String, List[Int]] = {
+    var r = HashMap[String, List[Int]]()
     var i = 0
     while (i < atoms.length) {
       //if (atoms(i).isBindable) r(atoms(i)) = i
@@ -162,7 +162,6 @@ class AtomSeq(val props: AlgProp, orig_xatoms: IndexedSeq[BasicAtom])
    * (shared, top-level multiplicity, total multiplicity)
    */
   lazy val variableMultiplicy: HashMap[String, (Boolean, Int, Int)] = {
-    val thing: String = ""
     var varmul = HashMap[String, (Boolean, Int, Int)]()
     var shared = false
     var localMul = 0
