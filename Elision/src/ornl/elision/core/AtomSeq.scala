@@ -159,18 +159,23 @@ class AtomSeq(val props: AlgProp, orig_xatoms: IndexedSeq[BasicAtom])
     var i = 0
       while (i < atoms.length) {
         atoms(i) match {
-          case v: Variable if (r.contains(v.name)) => r(v.name) = i +: r(v.name)
-          case v: Variable => r(v.name) = List[Int](i)
+          //case v: Variable if(r.contains(v.name) && r(v.name) != null) => r(v.name) = i +: r(v.name)
+          //case v: Variable => r(v.name) = List[Int](i)
+          case v:Variable => 
+            val indexes = r.getOrElse(v.name, null)
+            if(indexes == null) r(v.name) = List[Int](i)
+            else r(v.name) = i +: indexes
+          
           case as: AtomSeq =>
             val childindexes = as.variableMap
             childindexes.foreach( childvar =>
-              if(!r.contains(childvar._1)) r(childvar._1) = List() 
+              if(!r.contains(childvar._1)) r(childvar._1) = null 
             )
           case app: Apply => app.arg match {
             case aas: AtomSeq =>
               val childindexes = aas.variableMap
               childindexes.foreach( childvar =>
-                if(!r.contains(childvar._1)) r(childvar._1) = List() 
+                if(!r.contains(childvar._1)) r(childvar._1) = null 
               )
             case _ =>
           }
