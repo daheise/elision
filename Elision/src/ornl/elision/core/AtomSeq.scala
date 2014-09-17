@@ -123,6 +123,15 @@ class AtomSeq(val props: AlgProp, orig_xatoms: IndexedSeq[BasicAtom])
   private var _gotIsConstant = false
 
   /**
+   * Compute these things when processing the atoms in process().
+   *
+   * Determine whether we have to sort the atoms.  If the list is
+   * commutative, then we have to sort it.
+   */
+  val atoms: OmitSeq[BasicAtom] = (if (props.isC(false)) process(props, orig_xatoms).sorted(BasicAtomComparator)
+  else process(props, orig_xatoms))
+
+  /**
    * This is a mapping from constants in the sequence to the (zero-based)
    * index of the constant.
    */
@@ -138,23 +147,74 @@ class AtomSeq(val props: AlgProp, orig_xatoms: IndexedSeq[BasicAtom])
     }
     r
   }
+  
   /**
    * A map of that returns A list of indexes where a variable occurs
+   * 
+   * If a variable is contained in a child operator or AtomSeq, its occurrence
+   * is indicated by an empty list.
    */
   lazy val variableMap: HashMap[String, List[Int]] = {
     var r = HashMap[String, List[Int]]()
     var i = 0
-    while (i < atoms.length) {
-      //if (atoms(i).isBindable) r(atoms(i)) = i
-      atoms(i) match {
-        case v:Variable if(r.contains(v.name)) => r(v.name) =  i +: r(v.name)
-        case v:Variable => r(v.name) = List[Int](i)
-        case _ => 
+      while (i < atoms.length) {
+        atoms(i) match {
+          case v: Variable if (r.contains(v.name)) => r(v.name) = i +: r(v.name)
+          case v: Variable => r(v.name) = List[Int](i)
+          case as: AtomSeq =>
+            val childindexes = as.variableMap
+            childindexes.foreach( childvar =>
+              if(!r.contains(childvar._1)) r(childvar._1) = List() 
+            )
+          case app: Apply => app.arg match {
+            case aas: AtomSeq =>
+              val childindexes = aas.variableMap
+              childindexes.foreach( childvar =>
+                if(!r.contains(childvar._1)) r(childvar._1) = List() 
+              )
+            case _ =>
+          }
+          case _ =>
+        }
+        i += 1
       }
-      i += 1
-    }
     r
   }
+
+  private def get_variable_multiplicity(varname: String): (Boolean, Int, Int) =
+    {
+      var shared = false
+      var top_multiplicity = 0
+      var total_multiplicity = 0
+
+      // Visit children
+      var i = 0
+      while (i < atoms.length) {
+        atoms(i) match {
+          case v: Variable if (v.name == varname) =>
+            top_multiplicity += 1
+            total_multiplicity += 1
+          case as: AtomSeq =>
+            val childtuple = as.get_variable_multiplicity(varname)
+            if (childtuple._3 > 0) {
+              shared = true
+              total_multiplicity += childtuple._3
+            }
+          case app: Apply => app.arg match {
+            case aas: AtomSeq =>
+              val childtuple = aas.get_variable_multiplicity(varname)
+              if (childtuple._3 > 0) {
+                shared = true
+                total_multiplicity += childtuple._3
+              }
+            case _ =>
+          }
+          case _ =>
+        }
+        i += 1
+      }
+      (shared, top_multiplicity, total_multiplicity)
+    }
 
   /**
    * A mapping from variable names to multiplicity information.
@@ -163,94 +223,46 @@ class AtomSeq(val props: AlgProp, orig_xatoms: IndexedSeq[BasicAtom])
    */
   lazy val variableMultiplicy: HashMap[String, (Boolean, Int, Int)] = {
     var varmul = HashMap[String, (Boolean, Int, Int)]()
-    var shared = false
-    var localMul = 0
-    var totalMul = 0
+    this.variableMap.keys.foreach(thing => varmul(thing) = get_variable_multiplicity(thing))
+    Debugger("OrderedSequenceMatcher", "AtomSeq = " + this.toParseString)
+    Debugger("OrderedSequenceMatcher", "Variables counted: " + this.variableMap.keys)
+    Debugger("OrderedSequenceMatcher", "MULTIPLICITIES = ")
+    Debugger("OrderedSequenceMatcher", varmul + "\n")
+    varmul
+  }
 
-    def calculate_new_tuple(as:AtomSeq, vari: String) = {
-      val childtuple = as.variableMultiplicy.getOrElse(vari, null)
-      val newtuple =
-        if (childtuple == null) null
-        else (true, variableMultiplicy(vari)._2, variableMultiplicy(vari)._3 + childtuple._2)
-      if (newtuple != null) varmul(vari) = newtuple else null
-    }
+  /**
+   * This is the estimated cost of matching an atom sequence based on its
+   * algebraic properties, its length, and the matching cost of its children.
+   */
+  lazy val matchingCost: Double = {
+    var cost: Double =
+      if (!props.isA(false) && !props.isC(false)) Math.log(1)
+      else if (!props.isA(false) && props.isC(false)) Math.log(util.factorial(this.length))
+      else if (props.isA(false) && !props.isC(false)) {
+        Math.log(this.length)
+      } else if (props.isA(false) && props.isC(false)) {
+        Math.log(this.length) + Math.log(util.factorial(this.length))
+      } else -1
 
-    // Visit children
     var i = 0
-    while (i < atoms.length) {
+    while (i < atoms.length && cost > 0) {
       atoms(i) match {
-        case v: Variable if (varmul.contains(v.name)) =>
-          val oldtuple = varmul(v.name)
-          val newtuple = (oldtuple._1, oldtuple._2 + 1, oldtuple._3)
-          varmul(v.name) = newtuple
-        case v: Variable => varmul(v.name) = (false, 1, 0)
-        case as: AtomSeq =>
-          variableMap.keys.foreach(vari => {
-            val childtuple = as.variableMultiplicy.getOrElse(vari, null)
-            val newtuple =
-              if (childtuple == null) null
-              else (true, variableMultiplicy(vari)._2, variableMultiplicy(vari)._3 + childtuple._2)
-            if (newtuple != null) varmul(vari) = newtuple
-          })
+        case as: AtomSeq => cost = cost + as.matchingCost
         case app: Apply => app.arg match {
-          case aas: AtomSeq =>
-            variableMap.keys.foreach(vari => {
-              val childtuple = aas.variableMultiplicy.getOrElse(vari, null)
-              val newtuple =
-                if (childtuple == null) null
-                else (true, variableMultiplicy(vari)._2, variableMultiplicy(vari)._3 + childtuple._2)
-              if (newtuple != null) varmul(vari) = newtuple
-            })
-          case _ =>
+          case aas: AtomSeq => cost = cost + aas.matchingCost
+          case _            =>
         }
         case _ =>
       }
       i = i + 1
     }
-    varmul
-  }
-  
-  /**
-   * This is the estimated cost of matching an atom sequence based on its
-   * algebraic properties, its length, and the matching cost of its children. 
-   */
-  lazy val matchingCost: Double = { 
-    var cost: Double = 
-    if(!props.isA(false) && !props.isC(false)) Math.log(1)
-    else if(!props.isA(false) && props.isC(false)) Math.log(util.factorial(this.length))
-    else if(props.isA(false) && !props.isC(false)){
-       Math.log(this.length)
-    }
-    else if(props.isA(false) && props.isC(false)){
-      Math.log(this.length) + Math.log(util.factorial(this.length))
-    }
-    else -1
-    
-    var i = 0
-    while (i < atoms.length && cost > 0){
-      atoms(i) match{
-      case as:AtomSeq => cost = cost + as.matchingCost
-      case app:Apply => app.arg match{
-        case aas:AtomSeq => cost = cost + aas.matchingCost
-        case _ =>
-      }
-      case _ =>
-      }
-      i = i +1
-    }
     Debugger("cost", "Cost of " + this.toParseString + " = " + cost)
-    if(cost < 0) Int.MaxValue else cost
+    if (cost < 0) Int.MaxValue else cost
   }
 
-  /**
-   * Compute these things when processing the atoms in process().
-   *
-   * Determine whether we have to sort the atoms.  If the list is
-   * commutative, then we have to sort it.
-   */
-  val atoms: OmitSeq[BasicAtom] = (if (props.isC(false)) process(props, orig_xatoms).sorted(BasicAtomComparator)
-                                   else process(props, orig_xatoms))
 
+                                   
   import SymbolicOperator.LIST
 
   /**
@@ -382,7 +394,7 @@ class AtomSeq(val props: AlgProp, orig_xatoms: IndexedSeq[BasicAtom])
     }
 
     // Done!
-    return atoms
+    return atoms    
   }
 
   /**
