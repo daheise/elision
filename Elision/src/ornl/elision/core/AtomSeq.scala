@@ -148,34 +148,27 @@ class AtomSeq(val props: AlgProp, orig_xatoms: IndexedSeq[BasicAtom])
     r
   }
   
-  /**
-   * A map of that returns A list of indexes where a variable occurs
-   * 
-   * If a variable is contained in a child operator or AtomSeq, its occurrence
-   * is indicated by an empty list.
-   */
-  lazy val variableMap: HashMap[String, List[Int]] = {
+  private def generate_variable_map():HashMap[String, List[Int]] = {
     var r = HashMap[String, List[Int]]()
     var i = 0
       while (i < atoms.length) {
         atoms(i) match {
-          //case v: Variable if(r.contains(v.name) && r(v.name) != null) => r(v.name) = i +: r(v.name)
-          //case v: Variable => r(v.name) = List[Int](i)
           case v:Variable => 
-            val indexes = r.getOrElse(v.name, null)
-            if(indexes == null) r(v.name) = List[Int](i)
-            else r(v.name) = i +: indexes
+            val indexes = r.getOrElseUpdate(v.name, List[Int]())
+            //if(indexes == null) r(v.name) = List[Int](i)
+            r(v.name) = i +: indexes
           
+          //Indicate that these variables exist inside of children, but not the top level
           case as: AtomSeq =>
-            val childindexes = as.variableMap
+            val childindexes = as.generate_variable_map
             childindexes.foreach( childvar =>
-              if(!r.contains(childvar._1)) r(childvar._1) = null 
+              if(!r.contains(childvar._1)) r(childvar._1) = List() 
             )
           case app: Apply => app.arg match {
             case aas: AtomSeq =>
-              val childindexes = aas.variableMap
+              val childindexes = aas.generate_variable_map
               childindexes.foreach( childvar =>
-                if(!r.contains(childvar._1)) r(childvar._1) = null 
+                if(!r.contains(childvar._1)) r(childvar._1) = List() 
               )
             case _ =>
           }
@@ -185,29 +178,36 @@ class AtomSeq(val props: AlgProp, orig_xatoms: IndexedSeq[BasicAtom])
       }
     r
   }
+  
+  /**
+   * A map of that returns A list of indexes where a variable occurs
+   * 
+   * If a variable is contained in a child operator or AtomSeq, its occurrence
+   * is indicated by an empty list.
+   */
+  lazy val variableMap: HashMap[String, List[Int]] = {
+    generate_variable_map
+  }
 
   private def get_variable_multiplicity(varname: String): (Boolean, Int, Int) =
     {
       var shared = false
-      var top_multiplicity = 0
-      var total_multiplicity = 0
-
+      var top_multiplicity = this.variableMap.getOrElse(varname, List()).length
+      var total_multiplicity = this.variableMap.getOrElse(varname, List()).length
+     
       // Visit children
       var i = 0
       while (i < atoms.length) {
         atoms(i) match {
-          case v: Variable if (v.name == varname) =>
-            top_multiplicity += 1
-            total_multiplicity += 1
           case as: AtomSeq =>
-            val childtuple = as.get_variable_multiplicity(varname)
+            val childtuple = as.variableMultiplicy.getOrElse(varname, (false, 0, 0))
             if (childtuple._3 > 0) {
               shared = true
               total_multiplicity += childtuple._3
             }
           case app: Apply => app.arg match {
             case aas: AtomSeq =>
-              val childtuple = aas.get_variable_multiplicity(varname)
+              val childtuple = aas.variableMultiplicy.getOrElse(varname, (false, 0, 0))
               if (childtuple._3 > 0) {
                 shared = true
                 total_multiplicity += childtuple._3
@@ -229,6 +229,17 @@ class AtomSeq(val props: AlgProp, orig_xatoms: IndexedSeq[BasicAtom])
   lazy val variableMultiplicy: HashMap[String, (Boolean, Int, Int)] = {
     var varmul = HashMap[String, (Boolean, Int, Int)]()
     this.variableMap.keys.foreach(thing => varmul(thing) = get_variable_multiplicity(thing))
+    /*var i = 0
+    while(i < atoms.length){
+      atoms(i) match{
+        case v:Variable =>
+          varmul.getOrElseUpdate(v.name, get_variable_multiplicity(v.name))
+          //if(!varmul.contains(v.name)) varmul(v.name) = get_variable_multiplicity(v.name)
+        case _ =>
+      }
+      i += 1
+    }*/
+    //for(atom <- atoms.takeWhile())
     Debugger("OrderedSequenceMatcher", "AtomSeq = " + this.toParseString)
     Debugger("OrderedSequenceMatcher", "Variables counted: " + this.variableMap.keys)
     Debugger("OrderedSequenceMatcher", "MULTIPLICITIES = ")

@@ -150,12 +150,12 @@ object MatchHelper {
     binds.foreach(thing => {
       //If this variable exists in the map, get its ID. Otherwise, set -1
       //to indicate nonexistance.
-      val pomission = plist.variableMap.getOrElse(thing._1, null)
+      val pomission = plist.variableMap.getOrElse(thing._1, List())
       // Add the pattern index to pomissions for later removal. Add the atom to
       // the subject omissions to be searched for and removed.
       // It looks like different types of bindings will need different
       // strategies for elimination. Literals are low hanging fruit.
-      if (pomission != null && pomission.length > 0) {
+      if (pomission.length > 0) {
         def addOmission(p: Int, s: BasicAtom) {
           pomissions = p +: pomissions
           somissions = s +: somissions
@@ -360,12 +360,13 @@ object MatchHelper {
       var monotonic = true
       val toSort = pattern.exists(p =>
       p match {
-        case v: Variable => 
-          if (as.variableMultiplicy(v.name)._3 > minmult) monotonic = false
+        case v: Variable =>
+          val vm = as.variableMultiplicy(v.name)
+          if (vm._3 > minmult) monotonic = false
 
           if (!monotonic) true
           else {
-            minmult = Math.min(minmult, as.variableMultiplicy(v.name)._3)
+            minmult = Math.min(minmult, vm._3)
             false
           }
         case _ => false
@@ -378,10 +379,11 @@ object MatchHelper {
               case lv: Variable =>
                 r._1 match {
                   case rv: Variable =>
-                    //We want variables with the *highest* multiplicity first.
-                    if(as.variableMultiplicy(lv.name)._1 == as.variableMultiplicy(rv.name)._1)
-                      (as.variableMultiplicy(lv.name)._3 > as.variableMultiplicy(rv.name)._3)
-                    else if(as.variableMultiplicy(lv.name)._1 && !as.variableMultiplicy(rv.name)._1)
+                    val lvm = as.variableMultiplicy(lv.name)
+                    val rvm = as.variableMultiplicy(rv.name)
+                    if(lvm._1 == rvm._1)
+                      lvm._3 > rvm._3
+                    else if(lvm._1 && !rvm._1)
                       true
                     else false
                     
