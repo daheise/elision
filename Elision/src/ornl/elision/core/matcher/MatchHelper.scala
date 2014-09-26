@@ -50,6 +50,8 @@ import ornl.elision.core.Bindings
 import ornl.elision.core.OperatorRef
 import ornl.elision.core.Apply
 import ornl.elision.core.Literal
+import ornl.elision.core.NoProps
+import ornl.elision.core.BasicAtomComparator
 
 /**
  * Provide some support methods for matching.
@@ -299,6 +301,100 @@ object MatchHelper {
     })
     newbinds
   }
-    
-  
+
+  def reorder_matchcost(pattern: OmitSeq[BasicAtom], subject: OmitSeq[BasicAtom]) = {
+    // If we have at least two Applys, then sort the atoms, 
+    // hopefully putting the easiest matches first      
+    // Only sort if cost-to-match is not monotonically increasing
+    // (i.e. if it's not already sorted sensibly)
+    var maxcost = 0.0
+    var monotonic = true
+    val toSort = pattern.exists(p =>
+      p match {
+        case Apply(op, arg: AtomSeq) =>
+          if (arg.matchingCost < maxcost) monotonic = false
+
+          if (!monotonic) true
+          else {
+            maxcost = Math.max(maxcost, arg.matchingCost)
+            false
+          }
+        case arg: AtomSeq =>
+          if (arg.matchingCost < maxcost) monotonic = false
+
+          if (!monotonic) true
+          else {
+            maxcost = Math.max(maxcost, arg.matchingCost)
+            false
+          }
+        case _ => false
+      })
+    if (toSort) {
+      var zippedSeq = pattern zip subject
+      val as = AtomSeq(NoProps, pattern)
+      val multiplicity_sorted =
+        zippedSeq.sortWith((l: (BasicAtom, BasicAtom), r: (BasicAtom, BasicAtom)) => {
+          l._1 match {
+            case la: BasicAtom =>
+              r._1 match {
+                case ra: BasicAtom =>
+                  BasicAtomComparator(la, ra) == -1
+                case _ => false
+              }
+            case _ => false
+          }
+        })
+      val unzipped = multiplicity_sorted.unzip
+      (OmitSeq.fromIndexedSeq(unzipped._1), OmitSeq.fromIndexedSeq(unzipped._2))
+    } else (pattern, subject)
+  }
+
+  /**
+   * Reorder variables so the most ones with highest multiplicity are considered first.
+   * Use this only on patterns in SequenceMatcher.
+   */
+  def reorder_variables(pattern: OmitSeq[BasicAtom], subject: OmitSeq[BasicAtom]) =
+    {
+      val as = AtomSeq(NoProps, pattern)
+      var minmult = Int.MaxValue
+      var monotonic = true
+      val toSort = pattern.exists(p =>
+      p match {
+        case v: Variable =>
+          val vm = as.variableMultiplicy(v.name)
+          if (vm._3 > minmult) monotonic = false
+
+          if (!monotonic) true
+          else {
+            minmult = Math.min(minmult, vm._3)
+            false
+          }
+        case _ => false
+      })
+      if (toSort) {
+        var zippedSeq = pattern zip subject
+        val multiplicity_sorted =
+          zippedSeq.sortWith((l: (BasicAtom, BasicAtom), r: (BasicAtom, BasicAtom)) => {
+            l._1 match {
+              case lv: Variable =>
+                r._1 match {
+                  case rv: Variable =>
+                    val lvm = as.variableMultiplicy(lv.name)
+                    val rvm = as.variableMultiplicy(rv.name)
+                    if(lvm._1 == rvm._1)
+                      lvm._3 > rvm._3
+                    else if(lvm._1 && !rvm._1)
+                      true
+                    else false
+                    
+                  case _ => false
+                }
+              case _ => false
+            }
+          })
+        val unzipped = multiplicity_sorted.unzip
+        (OmitSeq.fromIndexedSeq(unzipped._1), OmitSeq.fromIndexedSeq(unzipped._2))
+      } else (pattern, subject)
+    }
 }
+

@@ -264,56 +264,14 @@ object SequenceMatcher {
     } else if (patterns.length != subjects.length) {
       Fail("Sequences are not the same length.")
     } else {
-      // If we have at least two Applys, then sort the atoms, 
-      // hopefully putting the easiest matches first      
-      // Only sort if cost-to-match is not monotonically increasing
-      // (i.e. if it's not already sorted sensibly)
-      var maxcost = 0.0
-      var monotonic = true
-      val toSort = patterns.exists(p =>
-        p match {
-          case Apply(op, arg: AtomSeq) =>
-            if (arg.matchingCost < maxcost) monotonic = false
-            
-            if(!monotonic) true
-            else {
-              maxcost = Math.max(maxcost, arg.matchingCost)
-              false
-            }
-          case arg: AtomSeq =>
-            if (arg.matchingCost < maxcost) monotonic = false
-            
-            if(!monotonic) true
-            else{
-              maxcost = Math.max(maxcost, arg.matchingCost)
-              false
-            }
-          case _ => false
-        })
-      if (toSort) {
-        Debugger("OrderedSequenceMatcher", "Using sorted SequenceMatcher")
-        Debugger("OrderedSequenceMatcher", "Before sorting:")
-        Debugger("OrderedSequenceMatcher", "plist:")
-        Debugger("OrderedSequenceMatcher", patterns.mkParseString("", ",", ""))
-        Debugger("OrderedSequenceMatcher", "slist")
-        Debugger("OrderedSequenceMatcher", subjects.mkParseString("", ",", ""))
-        // calculate consideration order
-        _patterns = patterns.sorted(BasicAtomComparator)
-        //Reorder the subjects to match up with their patterns
-        var newsubs = Vector[BasicAtom]()
-        var i = _patterns.length - 1
-        while (i >= 0) {
-          val a = _patterns(i)
-          newsubs = subjects(patterns.indexOf(a)) +: newsubs
-          i -= 1
-        }
-        Debugger("OrderedSequenceMatcher", "After sorting:")
-        Debugger("OrderedSequenceMatcher", "plist:")
-        Debugger("OrderedSequenceMatcher", _patterns.mkParseString("", ",", ""))
-        Debugger("OrderedSequenceMatcher", "slist")
-        Debugger("OrderedSequenceMatcher", newsubs.mkParseString("", ",", ""))
-        _subjects = OmitSeq.fromIndexedSeq(newsubs)
-      }
+      
+      
+       var reconsideredvars = MatchHelper.reorder_matchcost(_patterns, _subjects)
+      _patterns = reconsideredvars._1
+      _subjects = reconsideredvars._2
+      reconsideredvars = MatchHelper.reorder_variables(_patterns, _subjects)
+      _patterns = reconsideredvars._1
+      _subjects = reconsideredvars._2
 
       
       //Properties should have been taken into account at creation time, so we ignore them here.
@@ -336,6 +294,10 @@ object SequenceMatcher {
       Debugger("SequenceMatcher", "mbinds")
       Debugger("SequenceMatcher", mbinds.toParseString)
       Debugger("SequenceMatcher", "SequenceMatcher mandatory bindings: " + mbinds.toParseString)
+      
+//      Debugger("OrderedSequenceMatcher", "MULTIPLICITIES")
+      //Debugger("OrderedSequenceMatcher", MatchHelper.reorder_variables(_patterns, _subjects))
+      //_tryMatch(_patterns, _subjects, mbinds, 0)      
       _tryMatch(_patterns, _subjects, mbinds, 0)
 
     }
