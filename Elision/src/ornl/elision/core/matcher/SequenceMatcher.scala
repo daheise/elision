@@ -267,9 +267,10 @@ object SequenceMatcher {
       var reconsideredvars = MatchHelper.reorder_matchcost(_patterns, _subjects)
       _patterns = reconsideredvars._1
       _subjects = reconsideredvars._2
-      reconsideredvars = MatchHelper.reorder_variables(_patterns, _subjects)
+      //TODO: Variable reordering is too costly right now. Can we speed this up?
+      /*reconsideredvars = MatchHelper.reorder_variables(_patterns, _subjects)
       _patterns = reconsideredvars._1
-      _subjects = reconsideredvars._2
+      _subjects = reconsideredvars._2*/
 
       
       //Properties should have been taken into account at creation time, so we ignore them here.
