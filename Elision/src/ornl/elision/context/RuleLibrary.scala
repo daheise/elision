@@ -67,7 +67,6 @@ import ornl.elision.core.Variable
 import ornl.elision.core.giveMkParseString
 import ornl.elision.util.ElisionException
 import ornl.elision.util.OmitSeq
-import ornl.elision.util.other_hashify
 import ornl.elision.util.Debugger
 import ornl.elision.util.Loc
 import ornl.elision.util.BitSetFastHash

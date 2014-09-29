@@ -264,9 +264,7 @@ object SequenceMatcher {
     } else if (patterns.length != subjects.length) {
       Fail("Sequences are not the same length.")
     } else {
-      
-      
-       var reconsideredvars = MatchHelper.reorder_matchcost(_patterns, _subjects)
+      var reconsideredvars = MatchHelper.reorder_matchcost(_patterns, _subjects)
       _patterns = reconsideredvars._1
       _subjects = reconsideredvars._2
       reconsideredvars = MatchHelper.reorder_variables(_patterns, _subjects)

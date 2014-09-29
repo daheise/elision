@@ -159,6 +159,9 @@ class AtomSeq(val props: AlgProp, orig_xatoms: IndexedSeq[BasicAtom])
             r(v.name) = i +: indexes
           
           //Indicate that these variables exist inside of children, but not the top level
+          
+          //TODO: This code is to support variable reordering. This feature is currently commented out.
+          /*
           case as: AtomSeq =>
             val childindexes = as.generate_variable_map
             childindexes.foreach( childvar =>
@@ -172,6 +175,7 @@ class AtomSeq(val props: AlgProp, orig_xatoms: IndexedSeq[BasicAtom])
               )
             case _ =>
           }
+          */
           case _ =>
         }
         i += 1
