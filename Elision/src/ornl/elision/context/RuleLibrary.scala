@@ -37,6 +37,7 @@
  * */
 package ornl.elision.context
 
+import scala.language.reflectiveCalls
 import scala.annotation.tailrec
 import scala.collection.mutable.{Map => MMap, BitSet, ListBuffer}
 import scala.collection.immutable.List
