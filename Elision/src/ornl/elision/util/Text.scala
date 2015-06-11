@@ -99,7 +99,7 @@ class Text {
    */
   def wrap(width: Int, pad: Boolean = false): List[String] = {
     require(width > 0)
-    var ch: Char = '\0'         // Current character.
+    var ch: Char = '\u0000'         // Current character.
     var lines = List[String]()  // Accumulated lines.
     var index = 0               // Index into the buffer.
     var length = 0              // Current line length.

@@ -38,7 +38,6 @@
 package ornl.elision.gui.trees
 
 import scala.swing.BorderPanel.Position._
-import scala.concurrent.ops._
 import sys.process._
 
 import java.io._

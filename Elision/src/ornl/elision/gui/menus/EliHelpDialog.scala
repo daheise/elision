@@ -39,7 +39,6 @@ package ornl.elision.gui.menus
 
 import swing._
 import scala.swing.BorderPanel.Position._
-import scala.concurrent.ops._
 import sys.process._
 import java.io._
 import java.awt.Graphics2D

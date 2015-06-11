@@ -752,7 +752,7 @@ object SymbolicOperator {
  *                    probably leave this with the default value of false.
  * @param handlertxt  The text for an optional native handler.
  */
-protected class SymbolicOperator protected (
+class SymbolicOperator protected (
   sfh: SpecialFormHolder,
   name: String,
   typ: BasicAtom,

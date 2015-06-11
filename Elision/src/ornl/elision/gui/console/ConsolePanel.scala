@@ -38,7 +38,6 @@
 package ornl.elision.gui.console
 
 import scala.swing._
-import scala.concurrent.ops._
 import scala.actors.Actor
 import sys.process._
 import java.io._

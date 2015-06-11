@@ -39,7 +39,6 @@ package ornl.elision.gui.menus
 
 import swing._
 import swing.BorderPanel.Position._
-import concurrent.ops._
 import sys.process._
 import java.io._
 import java.awt.Color

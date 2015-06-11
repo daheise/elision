@@ -37,7 +37,6 @@
 
 package ornl.elision.gui
 
-import concurrent.ops._
 import sys.process._
 import java.io._
 

@@ -38,7 +38,6 @@
 package ornl.elision.gui.elision
 
 import java.io.File
-import scala.concurrent.ops._
 import sys.process._
 import ornl.elision.cli._
 import ornl.elision.gui._

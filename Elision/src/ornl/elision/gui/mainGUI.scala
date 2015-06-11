@@ -38,7 +38,6 @@
 package ornl.elision.gui
 
 
-import concurrent.ops._
 import java.io._
 import java.awt.Color
 import java.awt.Dimension

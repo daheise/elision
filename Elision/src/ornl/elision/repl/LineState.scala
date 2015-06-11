@@ -73,7 +73,7 @@ class LineState {
   private var _slComment = false
   
   /** The previous character. */
-  private var _prior:Char = '\0'
+  private var _prior:Char = '\u0000'
   
   /** Most recent return value from process method. */
   private var _state = false
@@ -95,7 +95,7 @@ class LineState {
     _inSymbol = false
     _inEscape = false
     _inComment = false
-    _prior = '\0'
+    _prior = '\u0000'
     _adjacent = 0
     _verb = false
   }
