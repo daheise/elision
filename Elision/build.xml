@@ -180,9 +180,10 @@ bin, lib, and other folders.</echo>
 		<scalac
 			destdir		="${build.bin}"
 			classpathref	="build.classpath"
-			optimise="${build.optimize}"
+			optimise        ="${build.optimize}"
 			deprecation	="on"
-			unchecked	="on">
+			unchecked	="on"
+                        addparams       ="-feature">
 			<src path="${build.src}"/>
 		</scalac>
 		<copy todir="${build.bin}" overwrite="yes">
