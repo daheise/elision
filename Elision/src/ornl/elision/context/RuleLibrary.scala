@@ -1019,7 +1019,7 @@ extends Fickle with Mutable {
     
     // Okay, now add the rule to the list.  We perform no checking to see if
     // the rule is already present.
-    list += Pair(bits, rule)
+    list += new Tuple2(bits, rule)
     this
   }
   
