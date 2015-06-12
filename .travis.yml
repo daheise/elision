@@ -37,8 +37,11 @@
 
 language: scala
 
+env:
+  - SCALA_VERSION="2.11.6"
+
 scala:
-  - 2.10.4
+  - 2.11.6
 
 jdk:
   - openjdk7
@@ -49,9 +52,9 @@ branches:
     - "2.11"
 
 install:
-  - wget http://www.scala-lang.org/files/archive/scala-2.10.4.tgz
-  - tar xzf scala-2.10.4.tgz
-  - export SCALA_HOME="$(pwd)/scala-2.10.4"
+  - wget http://downloads.typesafe.com/scala/2.11.6/scala-2.11.6.tgz 
+  - tar xzf scala-$SCALA_VERSION.tgz
+  - export SCALA_HOME="$(pwd)/scala-$SCALA_VERSION"
   - export PATH="$SCALA_HOME/bin/:$PATH"
   - hash -r
 
