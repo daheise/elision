@@ -46,6 +46,7 @@ jdk:
 branches:
   only:
     - master
+    - "2.11"
 
 install:
   - wget http://www.scala-lang.org/files/archive/scala-2.10.4.tgz
@@ -55,11 +56,17 @@ install:
   - hash -r
 
 script:
-  - cd Elision/
+  - pushd Elision/
   - ant
-  - echo "" | ./elision.sh
   - stty sane
+  - popd
+  - ./elision-checks.sh
+  - stty sane
+  - pushd Elision/
   - ant clean
   - ant release
-  - echo "" | ./elision.sh
   - stty sane
+  - popd
+  - ./elision-checks.sh
+  - stty sane
+
